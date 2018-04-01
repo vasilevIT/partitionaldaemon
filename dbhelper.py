@@ -200,6 +200,7 @@ class dbhelper:
         f = open('./sql/select.sql', 'w')
         f.write(sql)
         f.close()
+        return sql
 
     def clearDb(self):
         """
