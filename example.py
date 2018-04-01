@@ -11,4 +11,4 @@ from dbhelper import dbhelper
 
 db = dbhelper()
 db.connect()
-db.clearDb()
+db.createView()

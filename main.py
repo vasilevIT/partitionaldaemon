@@ -25,10 +25,10 @@ class PartitionDaemon(Daemon):
             i += 1
             if (i % 1000) == 0:
                 logger.info(str(i) + " rows inserted.")
-            time.sleep(0.001)
 
     def stop(self):
         super().stop()
+        self.db.createView()
 
 
 if __name__ == "__main__":
