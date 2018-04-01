@@ -105,7 +105,7 @@ class dbhelper:
         c.execute(sql_create_views)
         self.connect.commit()
         current_time = time.time()
-        self.createSelect(current_time - 15, current_time - 10)
+        self.createSelect(current_time - 7, current_time - 4)
 
     def createInnerJoin(self):
         """
@@ -149,15 +149,54 @@ class dbhelper:
 
     def createSelect(self, time_start, time_end):
         """
-        Создаем селект для выборки данных за последние 15-10 секунд
+        Создаем селект для выборки данных в промежутке от time_start до time_end
         :return:
         """
+        if os.path.isfile('./sql/select.sql'):
+            os.remove('./sql/select.sql')
+        datetime_start = datetime.datetime.fromtimestamp(time_start)
+        datetime_end = datetime.datetime.fromtimestamp(time_end)
+
+        year_start = str(datetime_start.year)
+        month_start = str(datetime_start.month)
+        day_start = str(datetime_start.day)
+        hour_start = str(datetime_start.hour)
+        minutes_start = str(datetime_start.minute)
+        seconds_start = str(datetime_start.second)
+
+        year_end = str(datetime_end.year)
+        month_end = str(datetime_end.month)
+        day_end = str(datetime_end.day)
+        hour_end = str(datetime_end.hour)
+        minutes_end = str(datetime_end.minute)
+        seconds_end = str(datetime_end.second)
+        # Определяем срез таблиц, в котором будем искать данные
+        table_search_name_start = 'tracking_' + year_start + '_' + month_start + '_' + day_start + '_' + hour_start + '_' + minutes_start + '_' + seconds_start
+        table_search_name_end = 'tracking_' + year_end + '_' + month_end + '_' + day_end + '_' + hour_end + '_' + minutes_end + '_' + seconds_end
+
         sql = """
-            select * from tracking 
-            where
-                time > (""" + str(time_start) + """ )
-                and time <(""" + str(time_end) + """)
+        select name from sqlite_master 
+        where  
+            type = 'table'
+            and name >= '""" + table_search_name_start + """"'
+            and name <= '""" + table_search_name_end + """"'
         """
+        c = self.connect.cursor()
+        c.execute(sql)
+        row = c.fetchone()
+        tables = []
+        while row:
+            tables.append(row[0])
+            row = c.fetchone()
+        if not len(tables):
+            return
+        tables = list(map(lambda table_name: "\n select * from " + table_name, tables))
+        sql = """ select * from ( """
+        sql += "\n union all ".join(tables)
+        sql += """)
+                where 
+                time >= """ + str(time_start) + """
+                 and time <= """ + str(time_end)
         f = open('./sql/select.sql', 'w')
         f.write(sql)
         f.close()
